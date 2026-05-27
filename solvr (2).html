@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solvr — AI Repair Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#04060c;--bg2:#070c14;--bg3:#0b1220;--bg4:#0f1829;
+  --border:rgba(0,200,255,0.08);--border2:rgba(0,200,255,0.16);--border3:rgba(0,200,255,0.28);
+  --text:#e4f0ff;--muted:rgba(228,240,255,0.35);--muted2:rgba(228,240,255,0.55);--muted3:rgba(228,240,255,0.75);
+  --c:#00c8ff;--c2:#00a0d4;--c3:#007aa8;--cdim:rgba(0,200,255,0.06);--cglow:rgba(0,200,255,0.2);
+  --amber:#f59e0b;--amber-dim:rgba(245,158,11,0.07);
+  --green:#00e5a0;--green-dim:rgba(0,229,160,0.07);
+  --red:#ff4d6a;
+  --D:'Outfit',sans-serif;--B:'Outfit',sans-serif;--M:'JetBrains Mono',monospace;
+  --r:10px;--r2:14px;--r3:20px;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--B);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+/* DEEP BG */
+body::before{content:'';position:fixed;inset:0;background:
+  radial-gradient(ellipse 120% 70% at 50% -10%,rgba(0,200,255,0.08) 0%,transparent 55%),
+  radial-gradient(ellipse 50% 40% at 85% 55%,rgba(0,120,200,0.04) 0%,transparent 50%),
+  radial-gradient(ellipse 40% 30% at 10% 75%,rgba(0,200,255,0.03) 0%,transparent 50%);
+pointer-events:none;z-index:0}
+
+/* GRID */
+body::after{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(0,200,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,255,0.04) 1px,transparent 1px);
+  background-size:60px 60px;pointer-events:none;z-index:0;
+  mask-image:radial-gradient(ellipse 100% 65% at 50% 0%,black 0%,transparent 100%)}
+
+/* SCANLINES */
+.scanlines{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,200,255,0.013) 3px,rgba(0,200,255,0.013) 4px)}
+
+/* PARTICLES */
+.particle{position:fixed;pointer-events:none;border-radius:50%;animation:floatUp linear infinite;opacity:0;z-index:1}
+@keyframes floatUp{0%{transform:translateY(100vh);opacity:0}8%{opacity:1}90%{opacity:.25}100%{transform:translateY(-5vh);opacity:0}}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:200;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 40px;transition:all .3s}
+nav.solid{background:rgba(4,6,12,0.93);border-bottom:1px solid var(--border2);backdrop-filter:blur(28px)}
+.logo{font-family:var(--D);font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.5px;cursor:pointer;display:flex;align-items:center;gap:9px;z-index:1}
+.logo-mark{width:28px;height:28px;border-radius:7px;background:rgba(0,200,255,0.12);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 0 14px rgba(0,200,255,0.1)}
+.logo span{color:var(--c)}
+.navlinks{display:flex;align-items:center;gap:4px}
+.navlinks a{font-size:13px;color:var(--muted2);text-decoration:none;transition:all .2s;cursor:pointer;font-weight:400;padding:6px 12px;border-radius:var(--r);font-family:var(--M);letter-spacing:0.3px}
+.navlinks a:hover{color:var(--text);background:var(--cdim)}
+.nav-cta{background:var(--c);color:#000;padding:8px 18px;border-radius:var(--r);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--M);transition:all .2s;border:none;letter-spacing:0.5px}
+.nav-cta:hover{background:#00e5ff;box-shadow:0 0 24px var(--cglow);transform:translateY(-1px)}
+#hbtn{display:none;background:var(--cdim);border:1px solid var(--border2);color:var(--text);width:36px;height:36px;border-radius:var(--r);cursor:pointer;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+#hb1,#hb2,#hb3{display:block;width:14px;height:1.5px;background:currentColor;transition:all .25s;transform-origin:center}
+#mob-nav{display:none;position:fixed;top:56px;left:0;right:0;background:rgba(4,6,12,0.97);border-bottom:1px solid var(--border2);padding:12px 16px 20px;z-index:199;flex-direction:column;gap:2px;transform:translateY(-8px);opacity:0;transition:all .25s;backdrop-filter:blur(28px)}
+#mob-nav a{display:block;padding:11px 14px;font-size:14px;color:var(--muted2);text-decoration:none;cursor:pointer;border-radius:var(--r);transition:all .15s;font-family:var(--M)}
+#mob-nav a:hover{color:var(--text);background:var(--cdim)}
+#mob-nav .mob-cta{display:block;margin-top:8px;padding:12px;background:var(--c);color:#000;border-radius:var(--r);font-weight:700;font-size:13px;text-align:center;cursor:pointer;border:none;font-family:var(--M)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(16px)}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r3);padding:36px;width:100%;max-width:440px;position:relative;animation:modalIn .28s cubic-bezier(.34,1.5,.64,1);box-shadow:0 0 80px rgba(0,200,255,0.07)}
+@keyframes modalIn{from{opacity:0;transform:translateY(20px) scale(.96)}to{opacity:1;transform:none}}
+.modal::after{content:'';position:absolute;top:0;left:15%;right:15%;height:1px;background:linear-gradient(90deg,transparent,var(--c),transparent);opacity:.7;border-radius:var(--r3) var(--r3) 0 0}
+.modal-close{position:absolute;top:14px;right:14px;background:var(--cdim);border:1px solid var(--border);color:var(--muted2);width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s;font-family:var(--M)}
+.modal-close:hover{border-color:var(--red);color:var(--red)}
+.modal-title{font-family:var(--D);font-size:22px;font-weight:800;margin-bottom:4px;letter-spacing:-0.5px}
+.modal-sub{font-size:13px;color:var(--muted2);margin-bottom:22px;line-height:1.6;font-family:var(--M)}
+.mform{display:flex;flex-direction:column;gap:10px}
+.mform label{font-size:10px;font-weight:600;color:var(--muted2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:1.2px;font-family:var(--M)}
+.mform input,.mform select,.mform textarea{width:100%;padding:10px 13px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:13px;font-family:var(--B);outline:none;transition:all .2s}
+.mform input:focus,.mform select:focus,.mform textarea:focus{border-color:var(--border2);background:var(--bg4);box-shadow:0 0 0 3px var(--cdim)}
+.mform input,.mform select,.mform textarea{-webkit-appearance:none}
+.mform input::placeholder{color:var(--muted)}
+.mform select option{background:var(--bg3)}
+.mrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mbtn{width:100%;padding:12px;background:var(--c);color:#000;border:none;border-radius:var(--r);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--M);transition:all .2s;letter-spacing:0.5px;margin-top:4px}
+.mbtn:hover{background:#00e5ff;box-shadow:0 0 28px var(--cglow);transform:translateY(-1px)}
+.mbtn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.modal-success{text-align:center;display:none;padding:8px 0}
+.modal-success .big-ico{font-size:48px;margin-bottom:14px}
+.modal-success h3{font-family:var(--D);font-size:22px;font-weight:800;margin-bottom:8px;letter-spacing:-.5px}
+.modal-success p{font-size:13px;color:var(--muted2);line-height:1.7;font-family:var(--M)}
+.mfeat{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted2);margin-top:7px;font-family:var(--M)}
+.mfeat::before{content:'//';color:var(--c);font-weight:700;flex-shrink:0;opacity:.7}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:120px 24px 80px;text-align:center;position:relative;z-index:1;overflow:hidden}
+.hbadge{display:inline-flex;align-items:center;gap:8px;background:var(--cdim);border:1px solid var(--border2);border-radius:4px;padding:6px 14px;font-size:11px;color:var(--c);font-weight:500;margin-bottom:36px;animation:up .6s ease both;font-family:var(--M);letter-spacing:1.5px;text-transform:uppercase}
+.pulse{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,229,160,.5)}50%{opacity:.7;box-shadow:0 0 0 7px rgba(0,229,160,0)}}
+h1.hero-h{font-family:var(--D);font-size:clamp(50px,8.5vw,112px);font-weight:900;line-height:.9;letter-spacing:-4px;max-width:960px;animation:up .7s .1s ease both}
+h1.hero-h em{font-style:normal;color:var(--c);text-shadow:0 0 60px rgba(0,200,255,0.3)}
+h1.hero-h .sub{color:rgba(228,240,255,0.22)}
+.hsub{font-size:clamp(13px,1.5vw,16px);color:var(--muted2);max-width:480px;margin:28px auto 0;font-weight:400;line-height:1.85;animation:up .7s .2s ease both;font-family:var(--M)}
+.hbtns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:44px;animation:up .7s .3s ease both}
+.btn-main{background:var(--c);color:#000;padding:12px 28px;border-radius:var(--r);font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:var(--M);transition:all .25s;letter-spacing:0.5px;display:inline-flex;align-items:center;gap:8px}
+.btn-main:hover{background:#00e5ff;transform:translateY(-2px);box-shadow:0 8px 40px var(--cglow)}
+.btn-ghost{border:1px solid var(--border2);color:var(--muted2);padding:12px 24px;border-radius:var(--r);font-size:13px;cursor:pointer;background:transparent;font-family:var(--M);transition:all .2s;letter-spacing:0.3px}
+.btn-ghost:hover{border-color:var(--border3);color:var(--text);background:var(--cdim)}
+@keyframes up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* STATUS BAR */
+.status-bar{display:inline-flex;align-items:stretch;margin-top:52px;animation:up .7s .4s ease both;border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;background:var(--cdim)}
+.status-item{padding:10px 20px;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted2);border-right:1px solid var(--border);transition:background .2s;font-family:var(--M);letter-spacing:0.3px;cursor:default}
+.status-item:last-child{border-right:none}
+.status-item:hover{background:rgba(0,200,255,0.08)}
+.status-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.s-green{background:var(--green);box-shadow:0 0 8px rgba(0,229,160,0.6)}
+.status-val{color:var(--c);font-weight:600}
+
+/* PHONES */
+.demo-phones{display:flex;gap:12px;justify-content:center;align-items:flex-end;margin-top:72px;animation:up .8s .5s ease both}
+.dphone{width:188px;border-radius:20px;overflow:hidden;border:1px solid var(--border2);flex-shrink:0;transition:all .35s cubic-bezier(.34,1.4,.64,1);background:var(--bg2)}
+.dphone:hover{transform:translateY(-12px) scale(1.03);border-color:var(--border3);box-shadow:0 24px 48px rgba(0,0,0,0.6),0 0 40px rgba(0,200,255,0.08)}
+.dphone.side{opacity:.2;transform:scale(.86) translateY(22px);filter:blur(1px)}
+.dphone.side:hover{opacity:.38;transform:scale(.89) translateY(14px);filter:blur(0)}
+.dph{background:var(--bg3);padding:9px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);position:relative}
+.dph::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--c),transparent);opacity:.4}
+.dpav{width:24px;height:24px;border-radius:6px;background:var(--cdim);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.dpname{font-size:11px;font-weight:700;color:var(--c);font-family:var(--M);letter-spacing:0.5px}
+.dpst{font-size:9px;color:var(--muted);font-family:var(--M)}
+.dpbody{background:var(--bg);padding:10px;min-height:185px;display:flex;flex-direction:column;gap:6px}
+.dpm{max-width:86%;padding:7px 10px;border-radius:8px;font-size:11px;line-height:1.5}
+.dpm.u{background:var(--bg3);border:1px solid var(--border);align-self:flex-start;border-radius:2px 8px 8px 8px;color:var(--text)}
+.dpm.b{background:var(--cdim);border:1px solid var(--border2);align-self:flex-end;border-radius:8px 2px 8px 8px;color:var(--c)}
+.dpmt{font-size:9px;color:var(--muted);text-align:right;margin-top:2px;font-family:var(--M)}
+
+/* TICKER */
+.ticker{border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:11px 0;overflow:hidden;position:relative;z-index:1;background:var(--bg2)}
+.ticker::before,.ticker::after{content:'';position:absolute;top:0;bottom:0;width:100px;z-index:2}
+.ticker::before{left:0;background:linear-gradient(to right,var(--bg2),transparent)}
+.ticker::after{right:0;background:linear-gradient(to left,var(--bg2),transparent)}
+.ticker-inner{display:flex;animation:tick 32s linear infinite;width:max-content}
+.tick-item{display:flex;align-items:center;gap:8px;padding:0 22px;font-size:11px;color:var(--muted);font-weight:500;white-space:nowrap;font-family:var(--M);letter-spacing:0.5px;text-transform:uppercase}
+.tick-sep{color:var(--c);opacity:.35}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* SECTIONS */
+.sec{padding:96px 32px;max-width:1080px;margin:0 auto;position:relative;z-index:1}
+.slabel{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:3px;color:var(--c);margin-bottom:16px;font-family:var(--M);opacity:.8}
+.stitle{font-family:var(--D);font-size:clamp(30px,4.5vw,58px);font-weight:900;line-height:1.0;letter-spacing:-2px}
+.stitle em{font-style:normal;color:var(--c)}
+.ssub{font-size:14px;color:var(--muted2);margin-top:16px;max-width:460px;font-weight:400;line-height:1.8;font-family:var(--M)}
+.sdivider{border:none;border-top:1px solid var(--border);max-width:1080px;margin:0 auto;position:relative;z-index:1}
+.reveal{opacity:0;transform:translateY(12px);transition:opacity .5s ease,transform .5s ease}
+.reveal.show{opacity:1;transform:translateY(0)}
+/* Fallback: if JS disabled or slow, still show content */
+@media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none}}
+
+/* STEPS */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin-top:52px;background:var(--border);border:1px solid var(--border2);border-radius:var(--r2);overflow:hidden}
+.step{background:var(--bg2);padding:30px 22px;transition:background .2s;position:relative;overflow:hidden}
+.step:hover{background:var(--bg3)}
+.step::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--c),transparent);opacity:0;transition:opacity .3s}
+.step:hover::after{opacity:.6}
+.step-num{font-family:var(--M);font-size:10px;color:var(--c);letter-spacing:2px;margin-bottom:18px;opacity:.6;font-weight:600}
+.step-ico{font-size:22px;margin-bottom:12px}
+.step-title{font-family:var(--D);font-size:15px;font-weight:700;margin-bottom:8px;letter-spacing:-.3px}
+.step-desc{font-size:12.5px;color:var(--muted2);line-height:1.75;font-family:var(--M)}
+
+/* FEATURES */
+.feat-wrap{margin-top:1px;border:1px solid var(--border2);border-top:none;border-radius:0 0 var(--r2) var(--r2);overflow:hidden}
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border)}
+.feat{background:var(--bg2);padding:30px;transition:background .2s}
+.feat:hover{background:var(--bg3)}
+.feat-ico{font-size:22px;margin-bottom:14px}
+.feat-t{font-family:var(--D);font-size:16px;font-weight:700;margin-bottom:8px;letter-spacing:-.3px}
+.feat-d{font-size:12.5px;color:var(--muted2);line-height:1.75;font-family:var(--M)}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin-top:52px;border:1px solid var(--border2);border-radius:var(--r2) var(--r2) 0 0;overflow:hidden;background:var(--border)}
+.stat-item{background:var(--bg2);padding:28px 20px;text-align:center;transition:background .2s}
+.stat-item:hover{background:var(--bg3)}
+.stat-num{font-family:var(--D);font-size:46px;font-weight:900;color:var(--c);letter-spacing:-3px;line-height:1;text-shadow:0 0 40px rgba(0,200,255,0.25)}
+.stat-label{font-size:10px;color:var(--muted);margin-top:6px;letter-spacing:1px;text-transform:uppercase;font-family:var(--M)}
+
+/* CATS */
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:8px;margin-top:44px}
+.cat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px 16px;transition:all .25s;cursor:pointer;text-align:center;position:relative;overflow:hidden}
+.cat-card::before{content:'';position:absolute;inset:0;background:var(--cdim);opacity:0;transition:opacity .25s}
+.cat-card:hover{border-color:var(--border2);transform:translateY(-3px)}
+.cat-card:hover::before{opacity:1}
+.cat-card:hover .cat-ico{transform:scale(1.12)}
+.cat-ico{font-size:26px;margin-bottom:10px;display:block;transition:transform .3s}
+.cat-name{font-family:var(--D);font-size:13px;font-weight:700;margin-bottom:3px;letter-spacing:-.2px}
+.cat-desc{font-size:11px;color:var(--muted);line-height:1.5;font-family:var(--M)}
+
+/* DEMO */
+.demo-wrap{display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start;margin-top:48px}
+.demo-panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:18px;margin-bottom:10px}
+.demo-panel-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:12px;font-family:var(--M)}
+.problem-types{display:flex;flex-wrap:wrap;gap:6px}
+.ptype{padding:5px 12px;border-radius:var(--r);border:1px solid var(--border);font-size:12px;color:var(--muted2);cursor:pointer;transition:all .15s;background:transparent;font-family:var(--M);letter-spacing:0.3px}
+.ptype:hover,.ptype.active{background:var(--cdim);border-color:var(--border2);color:var(--c)}
+.lang-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+.lpill{padding:4px 10px;border-radius:var(--r);border:1px solid var(--border);font-size:11px;color:var(--muted2);cursor:pointer;transition:all .15s;background:transparent;font-family:var(--M)}
+.lpill:hover,.lpill.active{border-color:var(--border2);color:var(--c);background:var(--cdim)}
+.hints-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px;margin-bottom:10px}
+.hints-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:10px;font-family:var(--M)}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{padding:5px 11px;border-radius:var(--r);border:1px solid var(--border);font-size:12px;color:var(--muted2);cursor:pointer;transition:all .15s;background:transparent;font-family:var(--M)}
+.chip:hover{border-color:var(--border2);color:var(--c);background:var(--cdim)}
+
+/* FULL CHAT */
+.chat-window{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);overflow:hidden;display:flex;flex-direction:column;height:560px;position:relative}
+.chat-window::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--c),transparent);opacity:.5;z-index:2}
+.chat-topbar{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg3);flex-shrink:0}
+.chat-topbar-left{display:flex;align-items:center;gap:10px}
+.chat-topbar-av{width:32px;height:32px;border-radius:9px;background:var(--cdim);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.chat-topbar-name{font-family:var(--D);font-size:15px;font-weight:700;color:var(--c);letter-spacing:-.2px}
+.chat-topbar-status{font-size:11px;color:var(--muted);font-family:var(--M);display:flex;align-items:center;gap:5px;margin-top:1px}
+.chat-online-dot{width:5px;height:5px;border-radius:50%;background:var(--green);flex-shrink:0;box-shadow:0 0 6px rgba(0,229,160,.6)}
+.chat-topbar-right{display:flex;align-items:center;gap:8px}
+.chat-tag{background:var(--cdim);border:1px solid var(--border2);color:var(--c);font-size:10px;font-family:var(--M);padding:3px 9px;border-radius:5px;letter-spacing:.5px;text-transform:uppercase}
+.chat-msgs{flex:1;overflow-y:auto;padding:24px 24px 16px;display:flex;flex-direction:column;gap:16px;scroll-behavior:smooth}
+.chat-msgs::-webkit-scrollbar{width:3px}
+.chat-msgs::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+.chat-msgs::-webkit-scrollbar-track{background:transparent}
+
+/* MESSAGE BUBBLES */
+.msg-row{display:flex;align-items:flex-end;gap:10px;animation:msgIn .25s ease}
+.msg-row.user{flex-direction:row-reverse}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.msg-av{width:28px;height:28px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px}
+.msg-av.ai-av{background:var(--cdim);border:1px solid var(--border2)}
+.msg-av.user-av{background:rgba(255,255,255,0.06);border:1px solid var(--border)}
+.msg-bubble{max-width:72%;padding:12px 16px;border-radius:16px;font-size:14px;line-height:1.65;word-break:break-word;position:relative}
+.msg-bubble.ai{background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:2px 16px 16px 16px}
+.msg-bubble.user{background:rgba(0,200,255,0.1);border:1px solid var(--border2);color:var(--text);border-radius:16px 2px 16px 16px}
+.msg-bubble.ai strong{color:var(--c)}
+.msg-time{font-size:10px;color:var(--muted);font-family:var(--M);margin-top:5px;text-align:right}
+.msg-bubble.ai .msg-time{text-align:left}
+
+/* TYPING INDICATOR */
+.typing-row{display:flex;align-items:flex-end;gap:10px}
+.typing-bubble{background:var(--bg3);border:1px solid var(--border);border-radius:2px 16px 16px 16px;padding:12px 16px;display:flex;align-items:center;gap:5px}
+.typing-bubble span{width:6px;height:6px;border-radius:50%;background:var(--c);animation:bop .9s infinite;opacity:.7}
+.typing-bubble span:nth-child(2){animation-delay:.18s}
+.typing-bubble span:nth-child(3){animation-delay:.36s}
+@keyframes bop{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+
+/* CHAT INPUT */
+.chat-input-area{padding:16px 20px;border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.chat-input-row{display:flex;align-items:flex-end;gap:10px;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:10px 12px;transition:border .2s}
+.chat-input-row:focus-within{border-color:var(--border3);box-shadow:0 0 0 3px var(--cdim)}
+.chat-textarea{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:14px;font-family:var(--B);line-height:1.6;resize:none;max-height:140px;min-height:24px;padding:0}
+.chat-textarea::placeholder{color:var(--muted)}
+.chat-send{background:var(--c);border:none;width:32px;height:32px;border-radius:8px;cursor:pointer;color:#000;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;font-weight:700;font-size:14px;align-self:flex-end}
+.chat-send:hover{background:#00e5ff;box-shadow:0 0 16px var(--cglow)}
+.chat-send:disabled{background:var(--bg4);cursor:not-allowed;color:var(--muted)}
+.chat-hint{font-size:11px;color:var(--muted);font-family:var(--M);margin-top:8px;text-align:center}
+
+/* PRICING *//* PRICING */
+.price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:52px}
+.plan{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:28px;transition:all .3s;position:relative;overflow:hidden}
+.plan::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--border2),transparent)}
+.plan:hover{background:var(--bg3);border-color:var(--border2);transform:translateY(-4px)}
+.plan.hot{border-color:var(--border2)}
+.plan.hot::after{background:linear-gradient(90deg,transparent,var(--c),transparent);opacity:.8}
+.pbadge{display:inline-flex;align-items:center;gap:5px;background:var(--cdim);border:1px solid var(--border2);color:var(--c);font-size:10px;font-weight:600;padding:3px 10px;border-radius:5px;margin-bottom:18px;font-family:var(--M);letter-spacing:.8px;text-transform:uppercase}
+.pname{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2.5px;color:var(--muted);margin-bottom:10px;font-family:var(--M)}
+.pprice{font-family:var(--D);font-size:54px;font-weight:900;letter-spacing:-3px;line-height:1;color:var(--text)}
+.pprice sup{font-size:22px;vertical-align:top;margin-top:10px;letter-spacing:0;color:var(--muted2);font-weight:400}
+.pper{font-size:11px;color:var(--muted);margin-top:4px;margin-bottom:24px;font-family:var(--M)}
+.pfeats{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:24px}
+.pfeats li{font-size:12.5px;color:var(--muted2);display:flex;align-items:flex-start;gap:8px;line-height:1.5;font-family:var(--M)}
+.pfeats li::before{content:'//';color:var(--c);font-weight:700;flex-shrink:0;opacity:.6;font-family:var(--M)}
+.pfeats li.no{color:var(--muted)}.pfeats li.no::before{content:'--';color:var(--border2);opacity:1}
+.pbtn{width:100%;padding:11px;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--M);border:none;text-decoration:none;display:block;text-align:center;transition:all .2s;letter-spacing:.5px;text-transform:uppercase}
+.pbtn.out{background:transparent;border:1px solid var(--border2);color:var(--muted2)}.pbtn.out:hover{border-color:var(--border3);color:var(--c);background:var(--cdim)}
+.pbtn.fill{background:var(--c);color:#000;font-weight:700}.pbtn.fill:hover{background:#00e5ff;box-shadow:0 0 28px var(--cglow)}
+
+/* FAQ */
+.faqs{display:flex;flex-direction:column;border:1px solid var(--border2);border-radius:var(--r2);overflow:hidden;margin-top:44px;background:var(--border);gap:1px}
+.faq{background:var(--bg2);transition:background .2s}.faq:hover{background:var(--bg3)}
+.fq{padding:18px 22px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:14px;font-weight:600;color:var(--text);user-select:none;letter-spacing:-.2px;font-family:var(--D)}
+.fq .arr{color:var(--muted2);transition:transform .3s;font-size:14px;flex-shrink:0;font-family:var(--M)}
+.fa{max-height:0;overflow:hidden;transition:max-height .4s ease}
+.fa p{padding:0 22px 18px;font-size:12.5px;color:var(--muted2);line-height:1.85;font-family:var(--M)}
+.faq.open .fa{max-height:240px}.faq.open .arr{transform:rotate(180deg)}
+
+/* CTA */
+.ctasec{padding:100px 32px;text-align:center;position:relative;overflow:hidden;border-top:1px solid var(--border);z-index:1}
+.cta-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:700px;height:500px;background:radial-gradient(circle,rgba(0,200,255,0.06),transparent 60%);animation:glowPulse 4s ease-in-out infinite;pointer-events:none}
+@keyframes glowPulse{0%,100%{opacity:.8;transform:translate(-50%,-50%) scale(1)}50%{opacity:.3;transform:translate(-50%,-50%) scale(1.1)}}
+.ctasec h2{font-family:var(--D);font-size:clamp(36px,5.5vw,76px);font-weight:900;letter-spacing:-3px;max-width:800px;margin:0 auto 16px;line-height:.97}
+.ctasec h2 em{font-style:normal;color:var(--c);text-shadow:0 0 60px rgba(0,200,255,0.25)}
+.ctasec p{font-size:14px;color:var(--muted2);margin-bottom:36px;font-family:var(--M);line-height:1.7}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border);padding:28px 32px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1;background:var(--bg2)}
+.flogo{font-family:var(--D);font-size:18px;font-weight:800;color:var(--muted2);display:flex;align-items:center;gap:8px;cursor:pointer;letter-spacing:-.5px}
+.flogo span{color:var(--c)}
+.flinks{display:flex;gap:20px}.flinks a{font-size:12px;color:var(--muted);text-decoration:none;cursor:pointer;transition:color .2s;font-family:var(--M)}.flinks a:hover{color:var(--c)}
+.fcopy{font-size:11px;color:var(--muted);font-family:var(--M)}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--bg2);border:1px solid var(--border2);color:var(--text);padding:10px 16px;border-radius:var(--r);font-size:12px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:999;display:flex;align-items:center;gap:8px;font-family:var(--M);box-shadow:0 0 40px rgba(0,200,255,0.06)}
+.toast.show{opacity:1}
+
+@media(max-width:900px){
+  .demo-phones{display:none}
+  .steps{grid-template-columns:1fr 1fr}
+  .feat-grid{grid-template-columns:1fr 1fr}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .price-grid{grid-template-columns:1fr}
+  .demo-wrap{grid-template-columns:1fr}
+  .chat-window{height:460px}
+}
+
+/* ─── PREMIUM MOBILE ─── */
+@media(max-width:640px){
+  /* NAV */
+  nav{padding:0 16px;height:54px}
+  .navlinks{display:none}
+  #hbtn{display:flex}
+
+  /* HERO */
+  .hero{padding:76px 16px 48px;min-height:auto}
+  h1.hero-h{font-size:clamp(44px,12vw,64px);letter-spacing:-3px}
+  .hsub{font-size:13px;margin-top:20px}
+  .hbtns{flex-direction:column;align-items:stretch;gap:8px;margin-top:32px}
+  .btn-main,.btn-ghost{width:100%;justify-content:center;padding:14px 20px}
+  .status-bar{flex-direction:column;width:100%;border-radius:var(--r)}
+  .status-item{border-right:none;border-bottom:1px solid var(--border);justify-content:space-between;padding:10px 16px}
+  .status-item:last-child{border-bottom:none}
+  .hbadge{font-size:10px;padding:5px 12px}
+
+  /* SECTIONS */
+  .sec{padding:56px 16px}
+  .stitle{font-size:clamp(24px,7.5vw,36px);letter-spacing:-1.5px}
+  .ssub{font-size:13px}
+  .slabel{font-size:9px;letter-spacing:2.5px}
+
+  /* STEPS */
+  .steps{grid-template-columns:1fr}
+  .step{padding:22px 18px}
+  .step:not(:last-child){border-bottom:1px solid var(--border)}
+  .step-num{margin-bottom:12px}
+
+  /* FEATURES */
+  .feat-grid{grid-template-columns:1fr}
+  .feat{padding:22px 18px}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .stat-num{font-size:36px}
+
+  /* CATS */
+  .cat-grid{grid-template-columns:1fr 1fr;gap:6px}
+  .cat-card{padding:16px 12px}
+  .cat-ico{font-size:22px;margin-bottom:8px}
+  .cat-name{font-size:12px}
+  .cat-desc{font-size:10px}
+
+  /* DEMO — full screen mobile chat */
+  .demo-wrap{grid-template-columns:1fr;gap:12px}
+
+  /* Controls become horizontal scroll pills on mobile */
+  .demo-panel{padding:14px;border-radius:var(--r)}
+  .demo-panel-title{font-size:9px;letter-spacing:1px;margin-bottom:8px}
+  .problem-types{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;gap:5px}
+  .problem-types::-webkit-scrollbar{display:none}
+  .ptype{white-space:nowrap;flex-shrink:0;font-size:11px;padding:4px 10px}
+  .lang-row{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+  .lang-row::-webkit-scrollbar{display:none}
+  .lpill{white-space:nowrap;flex-shrink:0}
+  .hints-box{padding:12px}
+  .chip{font-size:11px;padding:4px 10px}
+
+  /* FULL SCREEN CHAT on mobile */
+  .chat-window{
+    height:calc(100svh - 240px);
+    min-height:380px;
+    border-radius:var(--r2);
+    border:1px solid var(--border2);
+  }
+  .chat-topbar{padding:11px 14px}
+  .chat-topbar-av{width:28px;height:28px;font-size:13px}
+  .chat-topbar-name{font-size:14px}
+  .chat-topbar-status{font-size:10px}
+  .chat-msgs{padding:16px 14px 12px;gap:12px}
+  .msg-bubble{font-size:13.5px;padding:10px 13px;max-width:85%}
+  .msg-av{width:24px;height:24px;font-size:11px;border-radius:7px}
+  .chat-input-area{padding:10px 12px}
+  .chat-textarea{font-size:14px}
+  .chat-send{width:34px;height:34px;font-size:16px;border-radius:10px}
+  .chat-hint{font-size:10px;margin-top:6px}
+  .chat-input-row{border-radius:14px;padding:8px 10px;gap:8px}
+
+  /* PRICING */
+  .price-grid{grid-template-columns:1fr;gap:8px}
+  .plan{padding:22px 18px}
+  .pprice{font-size:44px}
+  .pfeats li{font-size:12px}
+
+  /* FAQ */
+  .fq{font-size:13px;padding:15px 18px}
+  .fa p{padding:0 18px 16px;font-size:12px}
+
+  /* CTA */
+  .ctasec{padding:72px 16px}
+  .ctasec h2{font-size:clamp(32px,9vw,52px);letter-spacing:-2px}
+
+  /* MODAL */
+  .modal{padding:22px 16px;margin:10px;max-height:92svh;overflow-y:auto;border-radius:var(--r2)}
+  .mrow{grid-template-columns:1fr}
+  .modal-title{font-size:20px}
+
+  /* FOOTER */
+  footer{flex-direction:column;gap:12px;text-align:center;padding:20px 16px}
+  .flinks{flex-wrap:wrap;justify-content:center;gap:14px}
+
+  /* TOAST */
+  .toast{left:12px;right:12px;justify-content:center;bottom:16px}
+}
+
+/* Extra small phones */
+@media(max-width:380px){
+  h1.hero-h{font-size:40px;letter-spacing:-2.5px}
+  .chat-window{height:calc(100svh - 260px)}
+  .pprice{font-size:38px}
+}
+</style>
+</head>
+<body>
+<div class="scanlines"></div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modal-body">
+      <div id="modal-badge" style="display:inline-flex;align-items:center;gap:5px;background:var(--cdim);border:1px solid var(--border2);color:var(--c);font-size:11px;font-weight:600;padding:3px 10px;border-radius:6px;margin-bottom:18px;letter-spacing:.3px">⚡ FREE PLAN</div>
+      <div class="modal-title" id="modal-title">Create your account</div>
+      <div class="modal-sub" id="modal-sub">Start solving problems for free.</div>
+      <div class="mform" id="modal-form" style="display:flex;flex-direction:column;gap:10px">
+        <div class="mrow">
+          <div><label>First name</label><input id="f-first" type="text" placeholder="Ahmed"></div>
+          <div><label>Last name</label><input id="f-last" type="text" placeholder="Benali"></div>
+        </div>
+        <div><label>Email</label><input id="f-email" type="email" placeholder="you@example.com"></div>
+        <div><label>Password</label><input id="f-pass" type="password" placeholder="At least 8 characters"></div>
+        <div><label>Country</label>
+          <select id="f-country">
+            <option>Morocco</option><option>Turkey</option><option>France</option><option>UAE</option>
+            <option>Saudi Arabia</option><option>United Kingdom</option><option>United States</option>
+            <option>Spain</option><option>Egypt</option><option>Germany</option><option>Other</option>
+          </select>
+        </div>
+        <button class="mbtn" id="mbtn" onclick="submitSignup()">Create free account →</button>
+        <div style="font-size:12px;color:var(--muted);text-align:center">By signing up you agree to our <span style="color:var(--c);cursor:pointer" onclick="openModal('terms')">Terms</span> and <span style="color:var(--c);cursor:pointer" onclick="openModal('privacy')">Privacy Policy</span></div>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px" id="modal-feats">
+        <div class="mfeat">3 free diagnoses every month</div>
+        <div class="mfeat">All home problem categories</div>
+        <div class="mfeat">5 main languages included</div>
+      </div>
+    </div>
+    <div class="modal-success" id="modal-success"></div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="logo" onclick="scrollTo(0,0)">
+    <div class="logo-mark">⚡</div>Solv<span>r</span>
+  </div>
+  <div class="navlinks">
+    <a onclick="scrollToSec('how')">How it works</a>
+    <a onclick="scrollToSec('demo')">Try it</a>
+    <a onclick="scrollToSec('pricing')">Pricing</a>
+    <a onclick="scrollToSec('faq')">FAQ</a>
+    <button class="nav-cta" onclick="openModal('free')">Get started</button>
+  </div>
+  <button id="hbtn" onclick="toggleNav()" aria-label="Menu">
+    <span id="hb1"></span><span id="hb2"></span><span id="hb3"></span>
+  </button>
+</nav>
+<div id="mob-nav">
+  <a onclick="mobGo('how')">How it works</a>
+  <a onclick="mobGo('demo')">Try it</a>
+  <a onclick="mobGo('pricing')">Pricing</a>
+  <a onclick="mobGo('faq')">FAQ</a>
+  <button class="mob-cta" onclick="openModal('free');closeNav()">Get started free</button>
+</div>
+
+<!-- HERO -->
+<div class="hero" id="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-dots"></div>
+  <div id="particles"></div>
+  <div class="hbadge"><span class="pulse"></span>AI-POWERED HOME REPAIR ASSISTANT</div>
+  <h1 class="hero-h">Any problem.<br><em>Any home.</em><br><span class="sub">Solved.</span></h1>
+  <p class="hsub">Describe what's broken, take a photo, or just type. Solvr diagnoses it instantly and guides you step by step — in any language.</p>
+  <div class="hbtns">
+    <button class="btn-main" onclick="openModal('free')">Start for free →</button>
+    <button class="btn-ghost" onclick="scrollToSec('how')">See how it works</button>
+  </div>
+  <div class="status-bar">
+    <div class="status-item"><span class="status-dot s-green"></span><span>System</span><span class="status-val">Online</span></div>
+    <div class="status-item"><span>Solved today</span><span class="status-val" id="solved-count">1,247</span></div>
+    <div class="status-item"><span>Languages</span><span class="status-val">24+</span></div>
+    <div class="status-item"><span>Avg fix time</span><span class="status-val">&lt;5 min</span></div>
+  </div>
+  <div class="demo-phones">
+    <!-- LEFT: French (language 2) -->
+    <div class="dphone side">
+      <div class="dph"><div class="dpav">🚿</div><div><div class="dpname">Solvr</div><div class="dpst">plomberie · français</div></div></div>
+      <div class="dpbody">
+        <div class="dpm u">Mon évier est bouché ce matin<div class="dpmt" style="color:var(--muted)">14:22</div></div>
+        <div class="dpm b">Avant d'appeler un plombier — avez-vous du bicarbonate et du vinaigre à la maison?<div class="dpmt">14:22</div></div>
+        <div class="dpm u">Oui j'en ai<div class="dpmt" style="color:var(--muted)">14:23</div></div>
+        <div class="dpm b">Versez une tasse de bicarbonate, puis du vinaigre. Attendez 15 min, puis de l'eau bouillante. 90% du temps ça marche! 🚿<div class="dpmt">14:23</div></div>
+      </div>
+    </div>
+    <!-- CENTER: English (top language) -->
+    <div class="dphone">
+      <div class="dph"><div class="dpav">⚡</div><div><div class="dpname">Solvr</div><div class="dpst">electricity · english</div></div></div>
+      <div class="dpbody">
+        <div class="dpm u">My lights went off in one room<div class="dpmt" style="color:var(--muted)">09:14</div></div>
+        <div class="dpm b">Sounds like a tripped circuit breaker. Go to your electrical panel and find a switch in the middle position. Do you see one?<div class="dpmt">09:14</div></div>
+        <div class="dpm u">Yes I can see one<div class="dpmt" style="color:var(--muted)">09:15</div></div>
+        <div class="dpm b">Push it fully OFF first, then back ON. Your lights should come right back! ✅<div class="dpmt">09:15</div></div>
+      </div>
+    </div>
+    <!-- RIGHT: Arabic (language 3) -->
+    <div class="dphone side">
+      <div class="dph"><div class="dpav">❄️</div><div><div class="dpname">Solvr</div><div class="dpst">تكييف · عربي</div></div></div>
+      <div class="dpbody">
+        <div class="dpm u" style="direction:rtl;text-align:right">المكيف شغال بس مش يبرد<div class="dpmt" style="color:var(--muted);text-align:left">16:05</div></div>
+        <div class="dpm b" style="direction:rtl;text-align:right">أكثر سبب شائع: فلتر متسخ. امتى آخر مرة نضفته؟<div class="dpmt" style="text-align:left">16:05</div></div>
+        <div class="dpm u" style="direction:rtl;text-align:right">ما نضفته أبداً<div class="dpmt" style="color:var(--muted);text-align:left">16:06</div></div>
+        <div class="dpm b" style="direction:rtl;text-align:right">هذا هو! أوقف المكيف، افتح الغطاء الأمامي، اغسل الفلتر بالماء، جففه وحطه. المكيف راح يشتغل أحسن بكثير! ❄️<div class="dpmt" style="text-align:left">16:06</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TICKER -->
+<div class="ticker"><div class="ticker-inner" id="ticker"></div></div>
+
+<!-- HOW IT WORKS -->
+<div class="sdivider"></div>
+<section class="sec" id="how">
+  <div class="slabel">How it works</div>
+  <div class="stitle">From broken to fixed<br>in <em>minutes.</em></div>
+  <p class="ssub">No repairman. No waiting. No expensive call-out fees.</p>
+  <div class="steps reveal">
+    <div class="step"><div class="step-num">STEP 01</div><div class="step-ico">💬</div><div class="step-title">Describe the problem</div><div class="step-desc">Type, speak, or take a photo. Any language — French, Arabic, English, Turkish, anything.</div></div>
+    <div class="step"><div class="step-num">STEP 02</div><div class="step-ico">🔍</div><div class="step-title">AI diagnoses instantly</div><div class="step-desc">Solvr identifies the exact problem in seconds. No searching, no YouTube rabbit holes.</div></div>
+    <div class="step"><div class="step-num">STEP 03</div><div class="step-ico">🪜</div><div class="step-title">Follow the steps</div><div class="step-desc">Clear numbered steps anyone can follow. No jargon. No technical knowledge needed.</div></div>
+    <div class="step"><div class="step-num">STEP 04</div><div class="step-ico">✅</div><div class="step-title">Problem solved</div><div class="step-desc">Fixed it yourself. Saved hundreds. No waiting. Tell Solvr it worked and it learns.</div></div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<div class="sdivider"></div>
+<section class="sec">
+  <div class="slabel">Why Solvr</div>
+  <div class="stitle">Better than Google.<br>Better than <em>YouTube.</em></div>
+  <div class="stats-row reveal">
+    <div class="stat-item"><div class="stat-num">40+</div><div class="stat-label">Problem types</div></div>
+    <div class="stat-item"><div class="stat-num">24+</div><div class="stat-label">Languages</div></div>
+    <div class="stat-item"><div class="stat-num">&lt;5s</div><div class="stat-label">Diagnosis time</div></div>
+    <div class="stat-item"><div class="stat-num">$0</div><div class="stat-label">Repairman cost saved</div></div>
+  </div>
+  <div class="feat-wrap">
+    <div class="feat-grid">
+      <div class="feat reveal"><div class="feat-ico">📸</div><div class="feat-t">Photo diagnosis</div><div class="feat-d">Take a photo of the broken thing — Solvr looks at it and identifies your exact problem. Not generic advice. Your specific issue.</div></div>
+      <div class="feat reveal"><div class="feat-ico">🌍</div><div class="feat-t">Any language</div><div class="feat-d">French, Arabic, Turkish, English, Spanish, Russian, Chinese — Solvr detects your language and responds in it instantly.</div></div>
+      <div class="feat reveal"><div class="feat-ico">🪜</div><div class="feat-t">Real step by step</div><div class="feat-d">Clear numbered steps with visuals. Written so anyone can follow — no technical knowledge whatsoever needed.</div></div>
+      <div class="feat reveal"><div class="feat-ico">🏠</div><div class="feat-t">Knows your home</div><div class="feat-d">Tell Solvr your appliances once. It remembers everything. Every fix gets smarter about your specific home.</div></div>
+      <div class="feat reveal"><div class="feat-ico">💰</div><div class="feat-t">Saves you money</div><div class="feat-d">Average repairman visit costs $50–200. Solvr Pro costs $4.99/month. Most problems take 10 minutes to fix yourself.</div></div>
+      <div class="feat reveal"><div class="feat-ico">🔒</div><div class="feat-t">Safe first</div><div class="feat-d">Solvr knows when something is dangerous. Gas leak? Major electrical fault? It tells you immediately to call a professional.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CATEGORIES -->
+<div class="sdivider"></div>
+<section class="sec" id="categories">
+  <div class="slabel">Problem categories</div>
+  <div class="stitle">Whatever's broken.<br><em>Solvr knows it.</em></div>
+  <div class="cat-grid">
+    <div class="cat-card reveal" onclick="setCategory('electricity',null)"><div class="cat-ico">⚡</div><div class="cat-name">Electricity</div><div class="cat-desc">Fuses, outlets, switches, breakers</div></div>
+    <div class="cat-card reveal" onclick="setCategory('plumbing',null)"><div class="cat-ico">🚿</div><div class="cat-name">Plumbing</div><div class="cat-desc">Leaks, blockages, pressure</div></div>
+    <div class="cat-card reveal" onclick="setCategory('ac',null)"><div class="cat-ico">❄️</div><div class="cat-name">AC / Heating</div><div class="cat-desc">Not cooling, strange noise</div></div>
+    <div class="cat-card reveal" onclick="setCategory('wifi',null)"><div class="cat-ico">📶</div><div class="cat-name">WiFi / Internet</div><div class="cat-desc">Slow, disconnecting, dead zones</div></div>
+    <div class="cat-card reveal" onclick="setCategory('appliances',null)"><div class="cat-ico">🫙</div><div class="cat-name">Appliances</div><div class="cat-desc">Washing machine, fridge, oven</div></div>
+    <div class="cat-card reveal" onclick="setCategory('doors',null)"><div class="cat-ico">🚪</div><div class="cat-name">Doors / Locks</div><div class="cat-desc">Stuck locks, broken handles</div></div>
+    <div class="cat-card reveal" onclick="setCategory('walls',null)"><div class="cat-ico">🧱</div><div class="cat-name">Walls / Floors</div><div class="cat-desc">Cracks, damp, peeling paint</div></div>
+    <div class="cat-card reveal" onclick="setCategory('gas',null)"><div class="cat-ico">🔥</div><div class="cat-name">Gas / Water heater</div><div class="cat-desc">No hot water, pilot light</div></div>
+  </div>
+</section>
+
+<!-- DEMO -->
+<div class="sdivider"></div>
+<section class="sec" id="demo">
+  <div class="slabel">AI Assistant</div>
+  <div class="stitle">Describe your problem.<br><em>Get the solution.</em></div>
+  <p class="ssub">Type any home problem in any language. Solvr diagnoses it instantly and walks you through the fix.</p>
+  <div class="demo-wrap">
+    <!-- LEFT: controls -->
+    <div>
+      <div class="demo-panel">
+        <div class="demo-panel-title">Category</div>
+        <div class="problem-types" id="ptypes">
+          <button class="ptype active" onclick="setCategory('electricity',this)">⚡ Electricity</button>
+          <button class="ptype" onclick="setCategory('plumbing',this)">🚿 Plumbing</button>
+          <button class="ptype" onclick="setCategory('ac',this)">❄️ AC</button>
+          <button class="ptype" onclick="setCategory('wifi',this)">📶 WiFi</button>
+          <button class="ptype" onclick="setCategory('appliances',this)">🫙 Appliances</button>
+          <button class="ptype" onclick="setCategory('doors',this)">🚪 Doors</button>
+          <button class="ptype" onclick="setCategory('gas',this)">🔥 Gas</button>
+          <button class="ptype" onclick="setCategory('other',this)">💡 Other</button>
+        </div>
+        <div class="demo-panel-title" style="margin-top:14px">Language</div>
+        <div class="lang-row" id="lpills">
+          <div class="lpill active" onclick="setLang('auto',this)">🌍 Auto</div>
+          <div class="lpill" onclick="setLang('english',this)">🇬🇧 EN</div>
+          <div class="lpill" onclick="setLang('french',this)">🇫🇷 FR</div>
+          <div class="lpill" onclick="setLang('arabic',this)">🇸🇦 AR</div>
+          <div class="lpill" onclick="setLang('turkish',this)">🇹🇷 TR</div>
+          <div class="lpill" onclick="setLang('spanish',this)">🇪🇸 ES</div>
+          <div class="lpill" onclick="setLang('german',this)">🇩🇪 DE</div>
+          <div class="lpill" onclick="setLang('russian',this)">🇷🇺 RU</div>
+          <div class="lpill" onclick="setLang('chinese',this)">🇨🇳 ZH</div>
+          <div class="lpill" onclick="setLang('hindi',this)">🇮🇳 HI</div>
+          <div class="lpill" onclick="setLang('portuguese',this)">🇵🇹 PT</div>
+          <div class="lpill" onclick="setLang('darija',this)" style="border-color:rgba(0,200,255,.25);color:var(--c)">🇲🇦 DZ</div>
+          <div class="lpill" onclick="setLang('gulf',this)">🇦🇪 XG</div>
+          <div class="lpill" onclick="setLang('tunisian',this)">🇹🇳 TN</div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:8px;font-family:var(--M)">🔒 Dialects on Pro & Family</div>
+      </div>
+      <div class="hints-box">
+        <div class="hints-title">Try asking</div>
+        <div class="chips" id="chips"></div>
+      </div>
+      <div style="margin-top:10px">
+        <button class="btn-ghost" style="font-size:12px;padding:7px 16px;width:100%;font-family:var(--M)" onclick="resetChat()">↺ New conversation</button>
+      </div>
+    </div>
+
+    <!-- RIGHT: full chat -->
+    <div class="chat-window">
+      <!-- Top bar -->
+      <div class="chat-topbar">
+        <div class="chat-topbar-left">
+          <div class="chat-topbar-av" id="d-av">⚡</div>
+          <div>
+            <div class="chat-topbar-name">Solvr</div>
+            <div class="chat-topbar-status"><span class="chat-online-dot"></span><span id="d-cat">Electricity · online</span></div>
+          </div>
+        </div>
+        <div class="chat-topbar-right">
+          <div class="chat-tag">AI</div>
+          <div style="font-size:11px;color:var(--muted);font-family:var(--M)">msgs: <strong id="msgcount" style="color:var(--c)">0</strong></div>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="chat-msgs" id="msgs"></div>
+
+      <!-- Input -->
+      <div class="chat-input-area">
+        <div class="chat-input-row">
+          <textarea class="chat-textarea" id="inp" rows="1" placeholder="Describe your home problem..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}" oninput="autoResize(this)"></textarea>
+          <button class="chat-send" id="sbtn" onclick="send()">↑</button>
+        </div>
+        <div class="chat-hint">Press Enter to send · Shift+Enter for new line · Powered by Claude AI</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<div class="sdivider"></div>
+<section class="sec" id="pricing">
+  <div class="slabel">Pricing</div>
+  <div class="stitle">Cheaper than one<br>repairman visit. <em>Forever.</em></div>
+  <p class="ssub">Start free. Upgrade when you need more. Cancel anytime.</p>
+  <div class="price-grid">
+    <div class="plan reveal">
+      <div class="pname">Free</div>
+      <div class="pprice"><sup>$</sup>0</div>
+      <div class="pper">Forever · no credit card</div>
+      <ul class="pfeats">
+        <li>3 diagnoses per month</li>
+        <li>All problem categories</li>
+        <li>5 main languages only — English, French, Arabic, Turkish, Spanish</li>
+        <li>Basic step by step guidance</li>
+        <li class="no">Regional dialects (Darija, Gulf Arabic, etc.)</li>
+        <li class="no">Photo diagnosis</li>
+        <li class="no">Home profile</li>
+        <li class="no">Fix history</li>
+      </ul>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:14px;font-size:12px;color:var(--muted2);line-height:1.6;font-family:var(--M)">Good for trying Solvr. Upgrade when you get your first repair done.</div>
+      <button class="pbtn out" onclick="openModal('free')">Get started free</button>
+    </div>
+    <div class="plan hot reveal">
+      <div class="pbadge">Most popular</div>
+      <div class="pname">Pro</div>
+      <div class="pprice"><sup>$</sup>4.99</div>
+      <div class="pper">per month · cancel anytime</div>
+      <ul class="pfeats">
+        <li>Unlimited diagnoses</li>
+        <li>All problem categories</li>
+        <li>All 24+ global languages</li>
+        <li>Regional dialects — Darija, Gulf Arabic, Tunisian and more</li>
+        <li>Photo diagnosis — AI sees your exact problem</li>
+        <li>1 home profile — remembers your appliances</li>
+        <li>Full fix history</li>
+        <li class="no">Multiple homes</li>
+        <li class="no">Repair cost estimator</li>
+      </ul>
+      <div style="background:var(--cdim);border:1px solid var(--border2);border-radius:8px;padding:10px;margin-bottom:14px;font-size:12px;color:var(--muted2);line-height:1.6;font-family:var(--M)">One repairman visit costs $50–200. Solvr Pro pays for itself the first time you use it.</div>
+      <button class="pbtn fill" onclick="openModal('pro')">Start 7-day free trial →</button>
+    </div>
+    <div class="plan reveal" style="border-color:rgba(245,158,11,.2)">
+      <div class="pbadge" style="background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.2);color:var(--amber)">🏠 Family</div>
+      <div class="pname">Family</div>
+      <div class="pprice"><sup>$</sup>9.99</div>
+      <div class="pper">per month · cancel anytime</div>
+      <ul class="pfeats">
+        <li>Unlimited diagnoses for everyone</li>
+        <li>Up to 5 separate home profiles</li>
+        <li>Every language + all regional dialects</li>
+        <li>Photo diagnosis for all homes</li>
+        <li>Repair cost estimator</li>
+        <li>Full fix history per property</li>
+        <li>Up to 5 family members</li>
+        <li>Maintenance reminders</li>
+        <li>Priority AI — fastest response</li>
+        <li>Dedicated support 24h</li>
+      </ul>
+      <div style="background:var(--amber-dim);border:1px solid rgba(245,158,11,.18);border-radius:8px;padding:10px;margin-bottom:14px;font-size:12px;color:var(--muted2);line-height:1.6;font-family:var(--M)">Perfect for families & landlords. <strong style="color:var(--amber)">Only $2/month per home.</strong></div>
+      <button class="pbtn out" style="border-color:rgba(245,158,11,.25);color:var(--amber)" onclick="openModal('family')">Get Family plan →</button>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<div class="sdivider"></div>
+<section class="sec" id="faq">
+  <div class="slabel">FAQ</div>
+  <div class="stitle">Questions <em>answered.</em></div>
+  <div class="faqs reveal">
+    <div class="faq"><div class="fq" onclick="tfaq(this)">Is it safe to follow Solvr's advice? <span class="arr">↓</span></div><div class="fa"><p>Yes. Solvr is designed with safety first. For every problem it assesses the risk. Gas leaks, major electrical faults, structural problems — it tells you immediately to call a professional. It never gives advice that could put you at risk.</p></div></div>
+    <div class="faq"><div class="fq" onclick="tfaq(this)">What languages does it support? <span class="arr">↓</span></div><div class="fa"><p>24+ global languages including Turkish, French, Arabic, English, Spanish, German, Russian, Chinese, Hindi, Portuguese and more. Pro and Family plans also include regional dialects — Darija (Moroccan Arabic), Gulf Arabic, Tunisian Arabic, and others.</p></div></div>
+    <div class="faq"><div class="fq" onclick="tfaq(this)">What kinds of problems can it fix? <span class="arr">↓</span></div><div class="fa"><p>Electricity (tripped breakers, dead outlets), plumbing (blockages, leaks, low pressure), AC and heating, WiFi problems, home appliances, doors and locks, walls and floors, gas and water heaters. More categories added regularly.</p></div></div>
+    <div class="faq"><div class="fq" onclick="tfaq(this)">What if it can't fix my problem? <span class="arr">↓</span></div><div class="fa"><p>Solvr tells you honestly when a problem needs a professional — and helps you understand what type of specialist you need and what to tell them, so you don't get overcharged.</p></div></div>
+    <div class="faq"><div class="fq" onclick="tfaq(this)">Do I need technical knowledge? <span class="arr">↓</span></div><div class="fa"><p>Zero. Solvr explains everything in plain language like a knowledgeable friend. No jargon, no complicated terms. Just clear steps anyone can follow.</p></div></div>
+    <div class="faq"><div class="fq" onclick="tfaq(this)">Can I cancel anytime? <span class="arr">↓</span></div><div class="fa"><p>Yes, anytime. No contracts, no lock-in. Cancel from your account in one click. You keep access until end of billing period.</p></div></div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="ctasec">
+  <div class="cta-glow"></div>
+  <h2 class="reveal">Any problem.<br>Any home. <em>Solved.</em></h2>
+  <p class="reveal">Describe it, get the fix. No repairman waiting. No expensive call-out fees.</p>
+  <button class="btn-main reveal" style="font-size:15px;padding:14px 36px" onclick="openModal('free')">Get started free →</button>
+</div>
+
+<footer>
+  <div class="flogo" onclick="scrollTo(0,0)"><div class="logo-mark" style="width:22px;height:22px;font-size:11px">⚡</div>Solv<span>r</span></div>
+  <div class="flinks">
+    <a onclick="openModal('privacy')">Privacy</a>
+    <a onclick="openModal('terms')">Terms</a>
+    <a onclick="openModal('contact')">Contact</a>
+  </div>
+  <div class="fcopy">© 2026 Solvr. All rights reserved.</div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY='PASTE_YOUR_KEY_HERE';
+const LANG={
+  auto:{name:'Auto',flag:'🌍',prompt:'Detect the language and reply ONLY in that same language. Always match the customer.'},
+  english:{name:'English',flag:'🇬🇧',prompt:'Reply ONLY in English. Every message.'},
+  french:{name:'French',flag:'🇫🇷',prompt:'Répondre UNIQUEMENT en français. Chaque message.'},
+  arabic:{name:'Arabic',flag:'🇸🇦',prompt:'الرد فقط باللغة العربية الفصحى. كل رسالة.'},
+  turkish:{name:'Turkish',flag:'🇹🇷',prompt:'YALNIZCA Türkçe yanıtla. Her mesaj.'},
+  spanish:{name:'Spanish',flag:'🇪🇸',prompt:'Responder SOLO en español. Cada mensaje.'},
+  german:{name:'German',flag:'🇩🇪',prompt:'NUR auf Deutsch antworten. Jede Nachricht.'},
+  russian:{name:'Russian',flag:'🇷🇺',prompt:'Отвечать ТОЛЬКО по-русски. Каждое сообщение.'},
+  chinese:{name:'Chinese',flag:'🇨🇳',prompt:'只用简体中文回复。每条消息。'},
+  hindi:{name:'Hindi',flag:'🇮🇳',prompt:'केवल हिंदी में उत्तर दें। हर संदेश।'},
+  portuguese:{name:'Portuguese',flag:'🇵🇹',prompt:'Responder APENAS em português. Cada mensagem.'},
+  darija:{name:'Darija',flag:'🇲🇦',prompt:'الرد فقط بالدارجة المغربية. استخدم كلمات: واش، بغيتي، مزيان، دابا، صافي، كاين، مكاينش. ليس الفصحى.'},
+  gulf:{name:'Gulf Arabic',flag:'🇦🇪',prompt:'الرد فقط باللهجة الخليجية. كل رسالة.'},
+  tunisian:{name:'Tunisian',flag:'🇹🇳',prompt:'الرد فقط بالدارجة التونسية. كل رسالة.'},
+};
+const HINTS={
+  electricity:{auto:['My lights went off in one room','Outlet not working','Circuit breaker keeps tripping','No power after storm'],french:["La lumière éteinte dans une pièce","La prise ne marche pas","Le disjoncteur saute"],arabic:["الأنوار طفت في غرفة","البريز لا يعمل","القاطع يقطع باستمرار"],darija:["الضو خرج من شي بيت","البريزة ما خدامة","القاطع كيقطع كتير"],turkish:["Bir odada ışıklar söndü","Priz çalışmıyor","Sigorta atmaya devam ediyor"]},
+  plumbing:{auto:['Sink is blocked','Toilet not flushing','Water leak under sink','Low water pressure'],french:["L'évier est bouché","La chasse d'eau ne marche pas","Fuite sous l'évier"],arabic:["الحوض مسدود","المرحاض لا يعمل","تسريب تحت الحوض"],darija:["المغسلة مسدودة","الطواليت ما كيخدمش","كاين تسرب"],turkish:["Lavabo tıkandı","Tuvalet sifonu çalışmıyor","Lavabonun altında sızıntı"]},
+  ac:{auto:['AC on but not cooling','Strange noise from AC','AC leaking water','Bad smell from AC'],french:["La clim ne refroidit pas","Bruit étrange de la clim","Odeur de la clim"],darija:["الكليما ما كيبردش","صوت غريب من الكليما"]},
+  wifi:{auto:['WiFi is slow','WiFi keeps disconnecting','No internet after restart','Dead zone in room'],french:["WiFi très lent","WiFi se déconnecte","Pas d'internet"],darija:["الويفي بطيء","الويفي كيقطع","ما كاينش انترنت"]},
+  appliances:{auto:['Washing machine not spinning','Fridge not cooling','Oven not heating','Dishwasher issues'],french:["Machine à laver ne tourne pas","Réfrigérateur ne refroidit pas"],darija:["الماشين ما كيدورش","الفريجو ما كيبردش"]},
+  doors:{auto:['Door lock is stuck','Door handle broken','Door not closing properly','Squeaky hinge'],french:["Serrure bloquée","Poignée cassée","La porte ne ferme pas"],darija:["القفل مسدود","الطرطوار مكسور"]},
+  walls:{auto:['Crack in wall','Damp on ceiling','Peeling paint','Broken floor tile'],french:["Fissure dans le mur","Humidité au plafond"],darija:["كاين شق فالحيط","رطوبة فالسقف"]},
+  gas:{auto:['No hot water','Pilot light went out','Water heater noise','I smell gas'],french:["Pas d'eau chaude","Veilleuse éteinte","Odeur de gaz"],darija:["ما كاينش ما سخون","النار دلاقوت طفات"]},
+  other:{auto:['Broken floor tile','Window not closing','Squeaky floor','Leaking roof'],french:["Carrelage cassé","Fenêtre qui ne ferme pas"],darija:["الطاجور مكسور","الشراجم ما كيسكرش"]},
+};
+const CAT_ICONS={electricity:'⚡',plumbing:'🚿',ac:'❄️',wifi:'📶',appliances:'🫙',doors:'🚪',walls:'🧱',gas:'🔥',other:'💡'};
+const CAT_NAMES={electricity:'Electricity',plumbing:'Plumbing',ac:'AC / Heating',wifi:'WiFi',appliances:'Appliances',doors:'Doors',walls:'Walls',gas:'Gas',other:'Other'};
+let selLang='auto',selCat='electricity',hist=[],msgs=0,busy=false;
+
+// TICKER
+const T=['Electricity outage','Blocked drain','AC not cooling','WiFi dropout','Washing machine fault','Stuck door lock','No hot water','Cracked wall','Low pressure','Fridge problem'];
+document.getElementById('ticker').innerHTML=[...T,...T].map(t=>`<span class="tick-item"><span class="tick-sep">·</span>${t}</span>`).join('');
+
+// NAV
+let navOpen=false;
+function toggleNav(){navOpen=!navOpen;const mn=document.getElementById('mob-nav');if(navOpen){mn.style.display='flex';setTimeout(()=>{mn.style.opacity='1';mn.style.transform='translateY(0)'},10);document.getElementById('hbtn').style.borderColor='var(--c)';document.getElementById('hb1').style.transform='rotate(45deg) translate(4.5px,4.5px)';document.getElementById('hb2').style.opacity='0';document.getElementById('hb3').style.transform='rotate(-45deg) translate(4.5px,-4.5px)'}else closeNav();}
+function closeNav(){navOpen=false;const mn=document.getElementById('mob-nav');mn.style.opacity='0';mn.style.transform='translateY(-8px)';setTimeout(()=>mn.style.display='none',250);document.getElementById('hbtn').style.borderColor='';document.getElementById('hb1').style.transform='';document.getElementById('hb2').style.opacity='1';document.getElementById('hb3').style.transform='';}
+function mobGo(id){closeNav();setTimeout(()=>scrollToSec(id),280);}
+function scrollToSec(id){document.getElementById(id)?.scrollIntoView({behavior:'smooth'});}
+window.addEventListener('scroll',()=>document.getElementById('nav').classList.toggle('solid',scrollY>20));
+function checkMobile(){const m=window.innerWidth<=640;document.getElementById('hbtn').style.display=m?'flex':'none';if(!m)closeNav();}
+window.addEventListener('resize',checkMobile);checkMobile();
+document.addEventListener('click',e=>{if(navOpen&&!e.target.closest('nav')&&!e.target.closest('#mob-nav'))closeNav();});
+
+// CATEGORIES
+function setCategory(cat,el){
+  selCat=cat;
+  document.querySelectorAll('.ptype').forEach(b=>b.classList.remove('active'));
+  if(el)el.classList.add('active');
+  document.getElementById('d-av').textContent=CAT_ICONS[cat]||'💡';
+  document.getElementById('d-cat').textContent=(CAT_NAMES[cat]||cat)+' · online';
+  renderChips();resetChat();
+  document.getElementById('demo')?.scrollIntoView({behavior:'smooth'});
+}
+
+// LANGUAGE
+function setLang(lang,el){
+  selLang=lang;
+  document.querySelectorAll('.lpill').forEach(p=>p.classList.remove('active'));
+  if(el)el.classList.add('active');
+  renderChips();resetChat();
+  toast((LANG[lang]?.flag||'🌍')+' '+(LANG[lang]?.name||'Auto'));
+}
+
+function renderChips(){
+  const catH=HINTS[selCat]||HINTS.other;
+  const arr=catH[selLang]||catH['auto']||[];
+  document.getElementById('chips').innerHTML=arr.map(h=>`<span class="chip" onclick="setIn(this.dataset.v)" data-v="${h}">${h}</span>`).join('');
+}
+function setIn(v){document.getElementById('inp').value=v;const inpEl=document.getElementById('inp');if(inpEl){inpEl.focus();inpEl.style.height='auto';}}
+
+// CHAT
+function buildPrompt(){
+  const l=LANG[selLang]||LANG['auto'];
+  return `You are Solvr — an AI home repair assistant. Help people fix home problems themselves.
+
+PROBLEM CATEGORY: ${CAT_NAMES[selCat]||selCat}
+
+LANGUAGE (CRITICAL): ${l.prompt}
+
+PERSONALITY: Friendly, clear, like a knowledgeable friend. Short replies — 2-4 lines max. Simple language, no jargon. Encouraging.
+
+SAFETY: If ANY risk to life (gas leak, major electrical, flooding) — say STOP and call a professional immediately.
+
+APPROACH:
+1. Ask ONE clarifying question if needed
+2. Give clear numbered steps
+3. List tools/materials needed first
+4. End with "Did that fix it? 👍"
+
+If the problem truly needs a professional, say so clearly and explain why.`;
+}
+
+function addMsg(txt,side){
+  const el=document.getElementById('msgs');
+  const time=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false});
+  const row=document.createElement('div');
+  row.className='msg-row '+(side==='u'?'user':'');
+  const av=document.createElement('div');
+  av.className='msg-av '+(side==='u'?'user-av':'ai-av');
+  av.textContent=side==='u'?'👤':'⚡';
+  const bubble=document.createElement('div');
+  bubble.className='msg-bubble '+(side==='u'?'user':'ai');
+  const safe=txt.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const lns=safe.split(String.fromCharCode(10)).join('<br>');
+  const tDiv=document.createElement('div');tDiv.className='msg-time';tDiv.textContent=time;
+  bubble.innerHTML=lns;
+  bubble.appendChild(tDiv);
+  row.appendChild(av);
+  row.appendChild(bubble);
+  el.appendChild(row);
+  el.scrollTop=el.scrollHeight;
+}
+function showTyp(){
+  const el=document.getElementById('msgs');
+  const row=document.createElement('div');row.className='typing-row';row.id='typ';
+  const av=document.createElement('div');av.className='msg-av ai-av';av.textContent='⚡';
+  const bub=document.createElement('div');bub.className='typing-bubble';bub.innerHTML='<span></span><span></span><span></span>';
+  row.appendChild(av);row.appendChild(bub);
+  el.appendChild(row);el.scrollTop=el.scrollHeight;
+}
+function rmTyp(){const e=document.getElementById('typ');if(e)e.remove();}
+
+async function send(){
+  const inp=document.getElementById('inp'),txt=inp.value.trim();
+  if(!txt||busy)return;
+  inp.value='';inp.style.height='auto';busy=true;document.getElementById('sbtn').disabled=true;
+  msgs++;document.getElementById('msgcount').textContent=msgs;
+  addMsg(txt,'u');hist.push({role:'user',content:txt});showTyp();
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,system:buildPrompt(),messages:hist})
+    });
+    const data=await res.json();rmTyp();
+    if(data.error){addMsg('⚠️ '+data.error.message,'b');busy=false;document.getElementById('sbtn').disabled=false;return;}
+    const full=data.content?.[0]?.text||'Something went wrong.';
+    hist.push({role:'assistant',content:full});
+    addMsg(full,'b');
+  }catch(e){rmTyp();addMsg('⚠️ Network error. Check your connection.','b');}
+  busy=false;document.getElementById('sbtn').disabled=false;const inpEl=document.getElementById('inp');if(inpEl){inpEl.focus();inpEl.style.height='auto';}
+}
+
+function resetChat(){
+  document.getElementById('msgs').innerHTML='';hist=[];
+  const g={auto:`Hi! 👋 I'm Solvr. Tell me what's broken and I'll help you fix it.`,french:`Bonjour! 👋 Je suis Solvr. Dites-moi ce qui est en panne.`,arabic:`مرحبا! 👋 أنا Solvr. أخبرني بالمشكلة.`,turkish:`Merhaba! 👋 Ben Solvr. Ne bozuldu söyleyin.`,spanish:`¡Hola! 👋 Soy Solvr. Dime qué está roto.`,german:`Hallo! 👋 Ich bin Solvr. Sag mir was kaputt ist.`,russian:`Привет! 👋 Я Solvr. Расскажи что сломалось.`,chinese:`你好！👋 我是Solvr。告诉我什么坏了。`,hindi:`नमस्ते! 👋 मैं Solvr हूँ। बताइए क्या टूटा है।`,portuguese:`Olá! 👋 Sou o Solvr. Diga o que está quebrado.`,darija:`مرحبا! 👋 أنا Solvr. قل ليا شنو الإشكال.`,gulf:`مرحبا! 👋 أنا Solvr. قولي إيش المشكلة.`,tunisian:`مرحبا! 👋 أنا Solvr. قولي شنوا المشكلة.`,english:`Hi! 👋 I'm Solvr. Tell me what's broken and I'll help you fix it.`};
+  const greet=g[selLang]||g['auto'];
+  addMsg(greet,'b');hist.push({role:'assistant',content:greet});
+  const pls={auto:'Describe your problem...',french:'Décrivez votre problème...',arabic:'صِف مشكلتك...',turkish:'Probleminizi açıklayın...',darija:'وصّف المشكلة ديالك...',english:'Describe your problem...'};
+  document.getElementById('inp').placeholder=pls[selLang]||pls['auto'];
+}
+
+// MODALS
+const MCFG={
+  free:{badge:'⚡ FREE PLAN',title:'Create your account',sub:'Start solving problems for free.',feats:['3 free diagnoses/month','All problem categories','5 main languages']},
+  pro:{badge:'🚀 PRO — $4.99/mo',title:'Start your free trial',sub:'7 days free. No credit card until trial ends.',feats:['Unlimited diagnoses','All 24+ languages + regional dialects','Photo diagnosis']},
+  family:{badge:'🏠 FAMILY — $9.99/mo',title:'Fix all your properties',sub:'5 homes. Unlimited diagnoses. Perfect for landlords.',feats:['Up to 5 home profiles','Every language + dialects','Repair cost estimator + maintenance reminders']},
+  contact:{badge:'💬 CONTACT',title:'Get in touch',sub:"We'll reply within 24 hours.",feats:[]},
+  privacy:{badge:'🔒 PRIVACY',title:'Privacy Policy',sub:'Last updated January 2026',feats:[]},
+  terms:{badge:'📄 TERMS',title:'Terms of Service',sub:'Last updated January 2026',feats:[]},
+};
+
+function openModal(plan){
+  const cfg=MCFG[plan]||MCFG.free;
+  document.getElementById('modal-badge').textContent=cfg.badge;
+  document.getElementById('modal-title').textContent=cfg.title;
+  document.getElementById('modal-sub').textContent=cfg.sub;
+  document.getElementById('modal-feats').innerHTML=cfg.feats.map(f=>`<div class="mfeat">${f}</div>`).join('');
+  document.getElementById('modal-success').style.display='none';
+
+  if(plan==='privacy'||plan==='terms'){
+    const pStyle='margin-bottom:12px;line-height:1.8;font-family:var(--M)';
+    const hStyle='color:var(--c)';
+    const txt=plan==='privacy'?
+      `<p style="${pStyle}"><strong style="${hStyle}">1. Data we collect</strong><br>Your name, email, and repair history. We never sell your data to anyone, ever.</p>
+       <p style="${pStyle}"><strong style="${hStyle}">2. How we use it</strong><br>Only to provide Solvr diagnoses and improve the service.</p>
+       <p style="${pStyle}"><strong style="${hStyle}">3. API key</strong><br>Stored in your browser only. We never see it, never send it anywhere.</p>
+       <p style="${pStyle}"><strong style="${hStyle}">4. Your rights</strong><br>Delete your account and all data anytime from account Settings.</p>
+       <p style="${pStyle}"><strong style="${hStyle}">5. Contact</strong><br>Privacy questions? Use the Contact form.</p>` :
+      `<p style="${pStyle}"><strong style="${hStyle}">1. Acceptance</strong><br>By using Solvr you agree to these terms. If you disagree, please stop using the service.</p>
+       <p style="${pStyle}"><strong style="${hStyle}">2. Safety</strong><br>Solvr provides guidance only. For any dangerous situation always call professionals immediately.</p>
+       <p style="${pStyle}"><strong style="${hStyle}">3. Payments</strong><br>Billed monthly. Cancel anytime. No refunds for partial months.</p>
+       <p style="${pStyle}"><strong style="${hStyle}">4. Liability</strong><br>Solvr is not liable for any damage from following its guidance. Use at your own risk.</p>
+       <p style="${pStyle}"><strong style="${hStyle}">5. Changes</strong><br>We may update these terms. Continued use means acceptance of changes.</p>`;
+    document.getElementById('modal-form').innerHTML=`<div style="font-size:13px;color:var(--muted);line-height:1.8;max-height:280px;overflow-y:auto">${txt}</div><button class="mbtn" style="margin-top:14px" onclick="closeModal()">Close</button>`;
+    document.getElementById('modal-form').style.cssText='display:flex;flex-direction:column;gap:10px';
+    document.getElementById('modal-feats').style.display='none';
+  } else if(plan==='contact'){
+    document.getElementById('modal-form').innerHTML=`
+      <div><label>Your name</label><input id="c-name" type="text" placeholder="Ahmed"></div>
+      <div><label>Email</label><input id="c-email" type="email" placeholder="you@example.com"></div>
+      <div><label>Message</label>
+        <textarea id="c-msg" placeholder="What do you need?" style="width:100%;padding:10px 13px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:13px;font-family:var(--B);outline:none;resize:vertical;min-height:90px;line-height:1.6;transition:border .2s" onfocus="this.style.borderColor='rgba(0,200,255,0.3)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+      </div>
+      <button class="mbtn" onclick="submitContact()">Send message →</button>`;
+    document.getElementById('modal-form').style.cssText='display:flex;flex-direction:column;gap:10px';
+    document.getElementById('modal-feats').style.display='none';
+  } else {
+    document.getElementById('modal-form').innerHTML=`
+      <div class="mrow">
+        <div><label>First name</label><input id="f-first" type="text" placeholder="Ahmed"></div>
+        <div><label>Last name</label><input id="f-last" type="text" placeholder="Benali"></div>
+      </div>
+      <div><label>Email</label><input id="f-email" type="email" placeholder="you@example.com"></div>
+      <div><label>Password</label><input id="f-pass" type="password" placeholder="Min 8 characters"></div>
+      <div><label>Country</label>
+        <select id="f-country">
+          <option>Morocco</option><option>Turkey</option><option>France</option><option>UAE</option>
+          <option>Saudi Arabia</option><option>United Kingdom</option><option>United States</option>
+          <option>Spain</option><option>Egypt</option><option>Germany</option><option>Other</option>
+        </select>
+      </div>
+      <button class="mbtn" id="mbtn" onclick="submitSignup()">${plan==='free'?'Create free account →':'Start free trial →'}</button>
+      <div style="font-size:11px;color:var(--muted);text-align:center;font-family:var(--M)">
+        By signing up you agree to our
+        <span style="color:var(--c);cursor:pointer" onclick="openModal('terms')">Terms</span> and
+        <span style="color:var(--c);cursor:pointer" onclick="openModal('privacy')">Privacy Policy</span>
+      </div>`;
+    document.getElementById('modal-form').style.cssText='display:flex;flex-direction:column;gap:10px';
+    document.getElementById('modal-feats').style.display='block';
+    setTimeout(()=>document.getElementById('f-first')?.focus(),300);
+  }
+  document.getElementById('modal').classList.add('show');
+  document.body.style.overflow='hidden';
+}
+function closeModal(){document.getElementById('modal').classList.remove('show');document.body.style.overflow='';}
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
+
+function submitSignup(){
+  const first=(document.getElementById('f-first')||{}).value?.trim();
+  const email=(document.getElementById('f-email')||{}).value?.trim();
+  const pass=(document.getElementById('f-pass')||{}).value?.trim();
+  if(!first){toast('⚠️ Enter your name');return;}
+  if(!email||!email.includes('@')){toast('⚠️ Enter a valid email');return;}
+  if(!pass||pass.length<8){toast('⚠️ Password must be 8+ characters');return;}
+  const btn=document.getElementById('mbtn');if(btn){btn.textContent='Creating account...';btn.disabled=true;}
+  setTimeout(()=>{
+    document.getElementById('modal-form').style.display='none';
+    document.getElementById('modal-feats').style.display='none';
+    const s=document.getElementById('modal-success');s.style.display='block';
+    s.innerHTML=`<div class="big-ico">🎉</div><h3>You're in!</h3><p>Welcome <strong>${first}</strong>! Check <strong>${email}</strong> to activate your account.</p><button class="mbtn" style="margin-top:18px" onclick="closeModal()">Let's go →</button>`;
+    toast('🎉 Account created!');
+  },1200);
+}
+function submitContact(){
+  const name=(document.getElementById('c-name')||{}).value?.trim();
+  const email=(document.getElementById('c-email')||{}).value?.trim();
+  const msg=(document.getElementById('c-msg')||{}).value?.trim();
+  if(!name){toast('⚠️ Enter your name');return;}
+  if(!email||!email.includes('@')){toast('⚠️ Enter a valid email');return;}
+  if(!msg||msg.length<5){toast('⚠️ Write a message');return;}
+  setTimeout(()=>{
+    document.getElementById('modal-form').style.display='none';
+    document.getElementById('modal-feats').style.display='none';
+    const s=document.getElementById('modal-success');s.style.display='block';
+    s.innerHTML=`<div class="big-ico">✉️</div><h3>Message sent!</h3><p>Thanks <strong>${name}</strong>! We'll reply to <strong>${email}</strong> within 24 hours.</p><button class="mbtn" style="margin-top:18px" onclick="closeModal()">Done ✓</button>`;
+    toast('✉️ Message sent!');
+  },800);
+}
+
+function tfaq(el){const f=el.parentElement,was=f.classList.contains('open');document.querySelectorAll('.faq').forEach(x=>x.classList.remove('open'));if(!was)f.classList.add('open');}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,140)+'px';}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2800);}
+
+// PARTICLES
+function makeParticle(){
+  const p=document.createElement('div');p.className='particle';
+  const s=Math.random()*3+1.5;
+  p.style.cssText=`width:${s}px;height:${s}px;left:${Math.random()*100}%;background:rgba(0,200,255,${Math.random()*.15+.03});animation-duration:${Math.random()*14+8}s;animation-delay:${Math.random()*6}s`;
+  document.getElementById('particles').appendChild(p);
+  setTimeout(()=>p.remove(),(parseFloat(p.style.animationDuration)+parseFloat(p.style.animationDelay))*1000+500);
+}
+setInterval(makeParticle,900);for(let i=0;i<6;i++)setTimeout(makeParticle,i*500);
+
+// COUNTER
+let sc=1247;
+setInterval(()=>{sc+=Math.floor(Math.random()*2)+1;const el=document.getElementById('solved-count');if(el)el.textContent=sc.toLocaleString();},4000);
+
+// REVEAL
+const obs=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('show');}),{threshold:0,rootMargin:'0px 0px -20px 0px'});
+document.querySelectorAll('.reveal').forEach(el=>{
+  obs.observe(el);
+  // Immediately show if already in viewport
+  const r=el.getBoundingClientRect();
+  if(r.top < window.innerHeight) el.classList.add('show');
+});
+
+// INIT
+renderChips();
+resetChat();
+</script>
+</body>
+</html>
